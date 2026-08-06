@@ -1,0 +1,258 @@
+#hust-gpa-fab {
+  position: fixed;
+  bottom: 90px;
+  right: 24px;
+  z-index: 999999;
+  background: #c0272d;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+#hust-gpa-fab:hover {
+  background: #a3181e;
+}
+
+#hust-gpa-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#hust-gpa-modal {
+  background: #fff;
+  width: 720px;
+  max-width: 92vw;
+  max-height: 88vh;
+  overflow-y: auto;
+  border-radius: 10px;
+  padding: 20px 24px 24px;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #222;
+}
+
+.hgm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.hgm-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+#hgm-close {
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  cursor: pointer;
+  color: #666;
+}
+
+.hgm-note {
+  font-size: 13px;
+  color: #555;
+  background: #fdf3f3;
+  border: 1px solid #f0d0d0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin: 12px 0;
+}
+
+.hgm-semester {
+  margin-bottom: 14px;
+}
+.hgm-semester-title {
+  font-weight: 700;
+  color: #c0272d;
+  margin: 10px 0 6px;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 4px;
+}
+
+.hgm-row {
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 10px 40px 10px 12px;
+  margin-bottom: 8px;
+  position: relative;
+  transition: opacity 0.15s, background 0.15s;
+}
+.hgm-row-auto {
+  background: #f6fbf6;
+  border-color: #cfe8cf;
+}
+.hgm-row-excluded {
+  opacity: 0.45;
+  background: #f0f0f0 !important;
+  filter: grayscale(100%);
+}
+.hgm-remove-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: #c0272d;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hgm-remove-btn:hover {
+  background: #a3181e;
+}
+.hgm-mamon {
+  color: #0b5fb0;
+  font-weight: 700;
+}
+.hgm-tenmon {
+  color: #0b5fb0;
+}
+.hgm-score {
+  color: #c0272d;
+  font-weight: 700;
+}
+.hgm-row-main {
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+.hgm-badge {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 11px;
+  background: #2e7d32;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.hgm-row-sub {
+  font-size: 12px;
+  color: #777;
+  margin-bottom: 6px;
+}
+.hgm-row-mode label {
+  font-size: 13px;
+  margin-right: 16px;
+  cursor: pointer;
+}
+.hgm-row-input {
+  margin-top: 6px;
+  font-size: 13px;
+}
+.hgm-row-input input,
+.hgm-row-input select {
+  margin-left: 6px;
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.hgm-footer {
+  text-align: right;
+  margin-top: 12px;
+}
+#hgm-calc {
+  background: #c0272d;
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+#hgm-calc:hover {
+  background: #a3181e;
+}
+
+#hgm-result h3 {
+  margin-top: 20px;
+  margin-bottom: 8px;
+  font-size: 16px;
+  color: #c0272d;
+}
+.hgm-cpa-value {
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+.hgm-cpa-message {
+  font-size: 13px;
+  font-style: italic;
+  color: #c0272d;
+  margin-bottom: 8px;
+}
+.hgm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.hgm-table th,
+.hgm-table td {
+  border: 1px solid #eee;
+  padding: 6px 8px;
+  text-align: left;
+}
+.hgm-table th {
+  background: #f7f7f7;
+}
+
+.hgm-credit {
+  margin-top: 20px;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+  text-align: center;
+  font-size: 12px;
+  color: #999;
+}
+
+.hgm-chart-card {
+  border: 1px solid #f0c8ca;
+  border-radius: 10px;
+  padding: 14px 12px 6px;
+  margin-bottom: 16px;
+  background: #fff;
+}
+.hgm-chart-title {
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+.hgm-chart-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Style cho 2 nút xuất PDF/Excel (bổ sung) */
+.hgm-export-btn {
+  background: #fff;
+  color: #c0272d;
+  border: 1.5px solid #c0272d;
+  padding: 9px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: 8px;
+}
+.hgm-export-btn:hover:not(:disabled) {
+  background: #fdf3f3;
+}
+.hgm-export-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

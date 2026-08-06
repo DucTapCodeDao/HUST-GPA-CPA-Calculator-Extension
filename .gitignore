@@ -1,0 +1,16 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+*.swp
+
+# Build/packaging output
+*.zip
+*.crx
+*.pem
+
+# Node (nếu sau này dùng npm để build lại thư viện)
+node_modules/
+package-lock.json
