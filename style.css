@@ -68,6 +68,11 @@
 
 .hgm-semester {
   margin-bottom: 14px;
+  transition: opacity 0.15s, filter 0.15s;
+}
+.hgm-semester-excluded {
+  opacity: 0.45;
+  filter: grayscale(100%);
 }
 .hgm-semester-title {
   font-weight: 700;
@@ -75,6 +80,11 @@
   margin: 10px 0 6px;
   border-bottom: 2px solid #eee;
   padding-bottom: 4px;
+  padding-right: 40px;
+  position: relative;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
 }
 
 .hgm-row {
@@ -114,6 +124,13 @@
 }
 .hgm-remove-btn:hover {
   background: #a3181e;
+}
+
+.hgm-remove-semester-btn {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
 }
 .hgm-mamon {
   color: #0b5fb0;
@@ -237,7 +254,6 @@
   display: block;
 }
 
-/* Style cho 2 nút xuất PDF/Excel (bổ sung) */
 .hgm-export-btn {
   background: #fff;
   color: #c0272d;

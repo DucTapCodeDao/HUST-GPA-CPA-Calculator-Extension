@@ -29,8 +29,9 @@
   }
 
   const IDs = new Set();
-
-//Part 5 (bổ sung): Xuất báo cáo PDF / Excel
+  
+  //Danh sách các học kỳ bị loại hoàn toàn khỏi tính toán/xuất file
+  const excludedSemesters = new Set();
 
   //Biến lưu lại dữ liệu tính toán gần nhất để 2 nút xuất file dùng lại
   let lastExportData = null;
@@ -56,6 +57,16 @@
       if (t.querySelector('tbody.ant-table-tbody tr[data-row-key]')) return t;
     }
     return null;
+  }
+
+  //Đọc họ tên và mã số sinh viên từ tiêu đề trang (dạng "Bảng điểm chi tiết: TÊN - MSSV")
+  function scrapeStudentInfo() {
+    const text = document.body.innerText || '';
+    const match = text.match(/Bảng điểm chi tiết:\s*([^\n\r-]+?)\s*-\s*(\d+)/);
+    if (match) {
+      return { name: match[1].trim(), studentId: match[2].trim() };
+    }
+    return { name: '', studentId: '' };
   }
 
   //Đọc dữ liệu từ bảng điểm
@@ -135,6 +146,7 @@
       return;
     }
     IDs.clear();
+    excludedSemesters.clear();
 
     const existing = document.getElementById('hust-gpa-overlay');
     if (existing) existing.remove();
@@ -183,23 +195,49 @@
     const body = document.getElementById('hgm-body');
     const grouped = {};
 
-    //Nhóm các Course theo Semester
+    //Nhóm các Course theo Semester (dùng semesterKey làm khóa ổn định)
     courses.forEach((c) => {
       if (c.Credit === 0) return; //Bỏ các Course có Credit = 0
-      if (!grouped[c.semesterName]) grouped[c.semesterName] = [];
-      grouped[c.semesterName].push(c);
+      const groupKey = 's_' + c.semesterKey;
+      if (!grouped[groupKey]) grouped[groupKey] = { semesterKey: c.semesterKey, name: c.semesterName, items: [] };
+      grouped[groupKey].items.push(c);
     });
 
     let html = '';
-    for (const semName of Object.keys(grouped)) {
-      html += `<div class="hgm-semester"><div class="hgm-semester-title">${semName}</div>`;
-      grouped[semName].forEach((c) => {
+    for (const groupKey of Object.keys(grouped)) {
+      const semKey = grouped[groupKey].semesterKey;
+      const semExcluded = excludedSemesters.has(semKey);
+      html += `<div class="hgm-semester${semExcluded ? ' hgm-semester-excluded' : ''}" data-sem-key="${semKey}">
+        <div class="hgm-semester-title">
+          ${grouped[groupKey].name}
+          <button class="hgm-remove-btn hgm-remove-semester-btn" data-remove-semester="${semKey}" title="Loại cả học kỳ này khỏi tính toán">${semExcluded ? '+' : '−'}</button>
+        </div>`;
+      grouped[groupKey].items.forEach((c) => {
         const auto = checkMIorSSH(c.ID) && c.qt !== null && c.ck !== null;
         html += renderCourseRow(c, auto);
       });
       html += `</div>`;
     }
     body.innerHTML = html;
+
+    //Gắn event cho button loại cả Semester khỏi tính toán
+    document.querySelectorAll('.hgm-remove-semester-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const semKey = btn.getAttribute('data-remove-semester');
+        const semEl = document.querySelector(`.hgm-semester[data-sem-key="${semKey}"]`);
+        if (excludedSemesters.has(semKey)) {
+          excludedSemesters.delete(semKey);
+          semEl.classList.remove('hgm-semester-excluded');
+          btn.textContent = '−';
+          btn.title = 'Loại cả học kỳ này khỏi tính toán';
+        } else {
+          excludedSemesters.add(semKey);
+          semEl.classList.add('hgm-semester-excluded');
+          btn.textContent = '+';
+          btn.title = 'Đưa học kỳ này trở lại tính toán';
+        }
+      });
+    });
 
     //Gắn event cho button loại Course khỏi tính toán
     document.querySelectorAll('.hgm-remove-btn').forEach((btn) => {
@@ -325,6 +363,7 @@
     for (const c of courses) {
       if (c.Credit === 0) continue;
       if (IDs.has(c.id)) continue;
+      if (excludedSemesters.has(c.semesterKey)) continue;
       const auto = checkMIorSSH(c.ID) && c.qt !== null && c.ck !== null;
 
       let score10 = null, scoreLetter, score4;
@@ -529,6 +568,7 @@
 
     //Lưu lại dữ liệu vừa tính để phục vụ xuất PDF/Excel, đồng thời bật 2 nút xuất file
     lastExportData = {
+      studentInfo: scrapeStudentInfo(),
       gpaBySemester: semesterKeysSorted.map((key) => {
         const sem = bySemester[key];
         let tongDiem4TC = 0, tongTC = 0;
@@ -559,7 +599,7 @@
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
 
-    // Nhúng font Noto Sans (hỗ trợ dấu tiếng Việt) để tránh lỗi font mặc định của jsPDF không có dấu
+    //Nhúng font Noto Sans (hỗ trợ dấu tiếng Việt)
     const fontName = 'NotoSansVN';
     if (window.__NOTOSANS_VN_BASE64__) {
       doc.addFileToVFS('NotoSans-VN-normal.ttf', window.__NOTOSANS_VN_BASE64__);
@@ -572,13 +612,21 @@
     doc.setFontSize(16);
     doc.text('Bảng điểm - GPA/CPA (HUST GPA/CPA Calculator)', 40, 40);
 
+    // Thêm Họ tên + MSSV
+    const { name: studentName, studentId } = lastExportData.studentInfo || {};
+    let offsetY = 0;
     doc.setFontSize(11);
-    doc.text(`CPA hệ 4: ${lastExportData.cpa.toFixed(2)} (tổng ${lastExportData.totalCredit_CPA} tín chỉ, ${lastExportData.distinctCourses.length} môn)`, 40, 62);
-    doc.text(note(lastExportData.cpa), 40, 78);
+    if (studentName || studentId) {
+      doc.text(`Sinh viên: ${studentName || '-'}   |   MSSV: ${studentId || '-'}`, 40, 58);
+      offsetY = 14;
+    }
+
+    doc.text(`CPA hệ 4: ${lastExportData.cpa.toFixed(2)} (tổng ${lastExportData.totalCredit_CPA} tín chỉ, ${lastExportData.distinctCourses.length} môn)`, 40, 62 + offsetY);
+    doc.text(note(lastExportData.cpa), 40, 78 + offsetY);
 
     //Bảng GPA theo học kỳ
     doc.autoTable({
-      startY: 96,
+      startY: 96 + offsetY,
       head: [['Học kỳ', 'GPA hệ 4', 'Số tín chỉ']],
       body: lastExportData.gpaBySemester.map((s) => [s.name, s.gpa.toFixed(2), String(s.tinChi)]),
       styles: { fontSize: 9, font: fontName },
@@ -601,7 +649,7 @@
       headStyles: { fillColor: [192, 39, 45], font: fontName, fontStyle: 'bold' },
     });
 
-    // Dòng credit ở cuối file PDF
+    //Dòng credit
     const afterDetailY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 24 : 500;
     doc.setFontSize(9);
     doc.setTextColor(150, 150, 150);
@@ -624,7 +672,15 @@
     const wb = window.XLSX.utils.book_new();
 
     //Sheet 1: GPA theo học kỳ
+    const studentInfoRows = (lastExportData.studentInfo && (lastExportData.studentInfo.name || lastExportData.studentInfo.studentId))
+      ? [
+          ['Sinh viên', lastExportData.studentInfo.name || '-'],
+          ['MSSV', lastExportData.studentInfo.studentId || '-'],
+          [],
+        ]
+      : [];
     const gpaSheetData = [
+      ...studentInfoRows,
       ['Học kỳ', 'GPA hệ 4', 'Số tín chỉ'],
       ...lastExportData.gpaBySemester.map((s) => [s.name, Number(s.gpa.toFixed(2)), s.tinChi]),
       [],
@@ -650,7 +706,7 @@
     window.XLSX.writeFile(wb, 'bang-diem-gpa-cpa.xlsx');
   }
 
-
+  //Hàm khởi tạo
   function init() {
     if (document.getElementById('hust-gpa-fab')) return;
     const table = findTranscriptTable();
