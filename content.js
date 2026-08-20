@@ -263,6 +263,25 @@
       if (c.Credit === 0) return;
       const auto = checkMIorSSH(c.ID) && c.qt !== null && c.ck !== null;
       if (!auto) return;
+
+      const autoRadios = document.querySelectorAll(`input[name="mode-${c.id}"]`);
+      autoRadios.forEach((r) => {
+        r.addEventListener('change', () => {
+          const letterBox = document.getElementById(`letter-box-${c.id}`);
+          const customBox = document.getElementById(`custom-box-${c.id}`);
+          const toggle = document.getElementById(`custom-toggle-${c.id}`);
+          if (r.value === 'auto') {
+            letterBox.style.display = 'none';
+            toggle.parentNode.style.display = '';
+            if (toggle && toggle.checked) customBox.style.display = '';
+          } else {
+            letterBox.style.display = '';
+            toggle.parentNode.style.display = 'none';
+            customBox.style.display = 'none';
+          }
+        });
+      });
+
       const toggle = document.getElementById(`custom-toggle-${c.id}`);
       if (!toggle) return;
       toggle.addEventListener('change', () => {
@@ -302,6 +321,7 @@
     const removeBtn = `<button class="hgm-remove-btn" data-remove-id="${c.id}" title="Loại môn này khỏi tính toán">−</button>`;
 
     if (auto) {
+      const letterOptions = LETTER_OPTIONS.map((l) => `<option value="${l}">${l}</option>`).join('');
       return `
         <div class="hgm-row hgm-row-auto" data-id="${c.id}">
           ${removeBtn}
@@ -311,11 +331,16 @@
           </div>
           <div class="hgm-row-sub"><b>QT:</b> <span class="hgm-score">${qtText}</span> | <b>CK:</b> <span class="hgm-score">${ckText}</span>${tnthText}</div>
           <div class="hgm-row-mode">
+            <label><input type="radio" name="mode-${c.id}" value="auto" checked> <b>Sử dụng điểm QT-CK</b></label>
+            <label><input type="radio" name="mode-${c.id}" value="letter"> <b>Nhập điểm chữ</b></label><br>
             <label><input type="checkbox" id="custom-toggle-${c.id}"> <b>Tự nhập điểm QT-CK</b></label>
           </div>
           <div id="custom-box-${c.id}" class="hgm-row-input" style="display:none;">
             <b>QT giả định:</b> <input type="number" step="0.1" min="0" max="10" id="custom-qt-${c.id}" value="${c.qt !== null ? c.qt : 0}" style="width:60px;">
             <b>CK giả định:</b> <input type="number" step="0.1" min="0" max="10" id="custom-ck-${c.id}" value="${c.ck !== null ? c.ck : 0}" style="width:60px;">
+          </div>
+          <div id="letter-box-${c.id}" class="hgm-row-input" style="display:none;">
+            <b>Điểm chữ:</b> <select id="letter-input-${c.id}">${letterOptions}</select>
           </div>
         </div>
       `;
@@ -382,6 +407,13 @@
         }
         score10 = qtDefault * 0.5 + ckDefault * 0.5;
         [scoreLetter, score4] = change(score10);
+
+        const modeEl = document.querySelector(`input[name="mode-${c.id}"]:checked`);
+        if (modeEl && modeEl.value === 'letter') {
+          const lInput = document.getElementById(`letter-input-${c.id}`);
+          scoreLetter = lInput.value;
+          score4 = LETTER_TO_4[scoreLetter];
+        }
 
       //Tính điểm các môn còn lại
       } else {
