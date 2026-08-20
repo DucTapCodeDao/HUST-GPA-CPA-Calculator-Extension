@@ -5,6 +5,11 @@ Tất cả thay đổi đáng chú ý của project sẽ được ghi lại tron
 ## [Unreleased]
 - None.
 
+## [1.2.0] - 2026-08-07
+### Added
+- Thêm thông tin về cảnh cáo học tập.
+- Tô màu đỏ cho những môn bị điểm F.
+
 ## [1.1.0] - 2026-08-07
 ### Added
 - Thêm tính năng loại 1 học kỳ ra khỏi quá trình tính toán.

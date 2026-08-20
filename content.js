@@ -30,7 +30,7 @@
 
   const IDs = new Set();
   
-  //Danh sách các học kỳ bị loại hoàn toàn khỏi tính toán/xuất file
+  //Danh sách các học kỳ bị loại khỏi tính toán/xuất file
   const excludedSemesters = new Set();
 
   //Biến lưu lại dữ liệu tính toán gần nhất để 2 nút xuất file dùng lại
@@ -59,7 +59,7 @@
     return null;
   }
 
-  //Đọc họ tên và mã số sinh viên từ tiêu đề trang (dạng "Bảng điểm chi tiết: TÊN - MSSV")
+  //Hàm đọc họ tên và MSSV từ trang web
   function scrapeStudentInfo() {
     const text = document.body.innerText || '';
     const match = text.match(/Bảng điểm chi tiết:\s*([^\n\r-]+?)\s*-\s*(\d+)/);
@@ -84,7 +84,7 @@
       const key = row.getAttribute('data-row-key');
       if (!key) return;
 
-      // Level 0: Semester, Level 1: Course
+      //Level 0: Semester, Level 1: Course
       if (row.classList.contains('ant-table-row-level-0')) {
         currentSemesterKey = key;
         const titleEl = row.querySelector('.title-semester');
@@ -220,7 +220,7 @@
     }
     body.innerHTML = html;
 
-    //Gắn event cho button loại cả Semester khỏi tính toán
+    //Gắn event cho button loại Semester khỏi tính toán
     document.querySelectorAll('.hgm-remove-semester-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         const semKey = btn.getAttribute('data-remove-semester');
@@ -485,6 +485,76 @@
     `;
   }
 
+
+  //Quy tắc tính cảnh cáo học tập:
+  //X = số tín chỉ trượt (F) TRONG kỳ đó
+  //Y = tổng số tín chỉ đang nợ kể từ đầu khóa
+  //X > 16: tăng 2 mức | X > 8: tăng 1 mức | X <= 4 (đang mức 1 hoặc 2): hạ 1 mức
+  //Đang mức 3 mà Y <= 24: hạ xuống mức 2
+  //Y > 24: luôn ép về ít nhất mức 3 (ưu tiên cao nhất)
+  
+  //Hàm tính cảnh cáo học tập theo từng học kỳ
+  function tinhCanhCaoHocTap(semesterKeysAsc, results) {
+    const attemptsSoFar = {};
+    const creditByID = {};
+    let oldLevel = 0;
+    const history = [];
+
+    semesterKeysAsc.forEach((key) => {
+      const itemsThisSem = results.filter((r) => r.semesterKey === key);
+      if (itemsThisSem.length === 0) return;
+
+      //X: tổng số tín chỉ trượt trong kỳ này
+      let X = 0;
+      itemsThisSem.forEach((it) => { if (it.score4 === 0) X += it.Credit; });
+
+      //Cập nhật bảng điểm hiện tại của kỳ
+      itemsThisSem.forEach((it) => {
+        creditByID[it.ID] = it.Credit;
+        if (attemptsSoFar[it.ID] === undefined || it.score4 > attemptsSoFar[it.ID]) {
+          attemptsSoFar[it.ID] = it.score4;
+        }
+      });
+
+      //Y: tổng số tín chỉ đang nợ kể từ đầu khóa
+      let Y = 0;
+      Object.keys(attemptsSoFar).forEach((id) => {
+        if (attemptsSoFar[id] === 0) Y += creditByID[id];
+      });
+
+      const isKyHe = /3$/.test(key);
+
+      //Tính mức cảnh cáo mới dựa trên mức cũ
+      let newLevel = oldLevel;
+      if (isKyHe) {
+        newLevel = oldLevel;
+      } else if (oldLevel === 3) {
+        newLevel = Y <= 24 ? 2 : 3;
+      } else if (X > 16) {
+        newLevel = Math.min(3, oldLevel + 2);
+      } else if (X > 8) {
+        newLevel = Math.min(3, oldLevel + 1);
+      } else if (X <= 4 && (oldLevel === 1 || oldLevel === 2)) {
+        newLevel = oldLevel - 1;
+      }
+      if (!isKyHe && Y > 24) newLevel = 3;
+
+      history.push({
+        semesterKey: key,
+        semesterName: itemsThisSem[0].semesterName,
+        X,
+        Y,
+        oldLevel,
+        newLevel,
+        isKyHe,
+      });
+
+      oldLevel = newLevel;
+    });
+
+    return history;
+  }
+
   //Hàm render kết quả GPA/CPA ra modal
   function renderResult(results) {
     //Tính GPA theo học kỳ
@@ -495,13 +565,14 @@
     });
 
     const semesterKeysSorted = Object.keys(bySemester).sort((a, b) => parseInt(b, 10) - parseInt(a, 10));
+    const semesterKeysAsc = [...semesterKeysSorted].sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
 
     let gpaHtml = '<h3>GPA theo học kỳ</h3><table class="hgm-table"><tr><th>Học kỳ</th><th>GPA hệ 4</th></tr>';
     semesterKeysSorted.forEach((key) => {
       const sem = bySemester[key];
-      let tongDiem4TC = 0, tongTC = 0;
-      sem.items.forEach((it) => { tongDiem4TC += it.score4 * it.Credit; tongTC += it.Credit; });
-      const gpa = tongTC > 0 ? (tongDiem4TC / tongTC) : 0;
+      let totalScore = 0, totalCredit = 0;
+      sem.items.forEach((it) => { totalScore += it.score4 * it.Credit; totalCredit += it.Credit; });
+      const gpa = totalCredit > 0 ? (totalScore / totalCredit) : 0;
       gpaHtml += `<tr><td>${sem.name}</td><td>${gpa.toFixed(2)}</td><td>${note(gpa)}</td></tr>`;
     });
     gpaHtml = gpaHtml.replace('<th>GPA hệ 4</th>', '<th>GPA hệ 4</th><th>Nhận xét</th>');
@@ -530,12 +601,30 @@
     distinctCourses
       .sort((a, b) => a.ID.localeCompare(b.ID))
       .forEach((it) => {
-        cpaHtml += `<tr><td class="hgm-ID">${it.ID}</td><td class="hgm-Name">${it.Name}</td><td>${it.Credit}</td><td class="hgm-score">${it.scoreLetter}</td><td class="hgm-score">${it.score4.toFixed(2)}</td></tr>`;
+        const failClass = it.scoreLetter === 'F' ? ' class="hgm-tr-fail"' : '';
+        cpaHtml += `<tr${failClass}><td class="hgm-ID">${it.ID}</td><td class="hgm-Name">${it.Name}</td><td>${it.Credit}</td><td class="hgm-score">${it.scoreLetter}</td><td class="hgm-score">${it.score4.toFixed(2)}</td></tr>`;
       });
     cpaHtml += '</table>';
 
+    //Tính cảnh cáo học tập theo từng kỳ
+    const historyCanhCao = tinhCanhCaoHocTap(semesterKeysAsc, results);
+    const canhCaoHienTai = historyCanhCao.length > 0 ? historyCanhCao[historyCanhCao.length - 1] : { Y: 0, newLevel: 0 };
+
+    const colorLevel = ['#2e7d32', '#f9a825', '#ef6c00', '#c0272d'];
+    let canhBaoHtml = `
+      <h3>Cảnh cáo học tập</h3>
+      <div class="hgm-warning-summary" style="border-left-color:${colorLevel[canhCaoHienTai.newLevel]}">
+        <div>Tổng số tín chỉ đang nợ: <b>${canhCaoHienTai.Y}</b> tín chỉ</div>
+        <div>Mức cảnh cáo hiện tại: <b style="color:${colorLevel[canhCaoHienTai.newLevel]}">Mức ${canhCaoHienTai.newLevel}</b>${canhCaoHienTai.newLevel === 3 ? ' — nguy cơ buộc thôi học nếu tiếp tục bị mức 3 kỳ tiếp theo' : ''}</div>
+      </div>
+      <table class="hgm-table"><tr><th>Học kỳ</th><th>Số tín chỉ nợ trong kỳ</th><th>Tổng số tín chỉ đang nợ</th><th>Mức cảnh cáo</th></tr>`;
+    historyCanhCao.forEach((it) => {
+      const tenKy = it.semesterName + (it.isKyHe ? ' <span style="color:#999;font-weight:400;font-style:italic;">(không xét cảnh cáo)</span>' : '');
+      canhBaoHtml += `<tr><td>${tenKy}</td><td>${it.X}</td><td>${it.Y}</td><td style="color:${colorLevel[it.newLevel]};font-weight:700;">Mức ${it.newLevel}</td></tr>`;
+    });
+    canhBaoHtml += '</table>';
+
     //Vẽ biểu đồ GPA/CPA theo học kỳ
-    const semesterKeysAsc = [...semesterKeysSorted].sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
     const gpaLabels = semesterKeysAsc.map((k) => k);
     const gpaValues = semesterKeysAsc.map((k) => {
       const sem = bySemester[k];
@@ -564,20 +653,22 @@
       drawLineChart('GPA - Điểm trung bình học kỳ', gpaLabels, gpaValues, '#c0272d') +
       drawLineChart('CPA - Điểm trung bình tích lũy', gpaLabels, cpaValues, '#c0272d');
 
-    document.getElementById('hgm-result').innerHTML = gpaHtml + cpaHtml + chartHtml;
+    document.getElementById('hgm-result').innerHTML = gpaHtml + cpaHtml + canhBaoHtml + chartHtml;
 
     //Lưu lại dữ liệu vừa tính để phục vụ xuất PDF/Excel, đồng thời bật 2 nút xuất file
     lastExportData = {
       studentInfo: scrapeStudentInfo(),
       gpaBySemester: semesterKeysSorted.map((key) => {
         const sem = bySemester[key];
-        let tongDiem4TC = 0, tongTC = 0;
-        sem.items.forEach((it) => { tongDiem4TC += it.score4 * it.Credit; tongTC += it.Credit; });
-        return { name: sem.name, gpa: tongTC > 0 ? tongDiem4TC / tongTC : 0, tinChi: tongTC };
+        let totalScore = 0, totalCredit = 0;
+        sem.items.forEach((it) => { totalScore += it.score4 * it.Credit; totalCredit += it.Credit; });
+        return { name: sem.name, gpa: totalCredit > 0 ? totalScore / totalCredit : 0, tinChi: totalCredit };
       }),
       cpa,
       totalCredit_CPA,
       distinctCourses,
+      historyCanhCao,
+      canhCaoHienTai,
     };
     const pdfBtn = document.getElementById('hgm-export-pdf');
     const excelBtn = document.getElementById('hgm-export-excel');
@@ -599,7 +690,7 @@
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
 
-    //Nhúng font Noto Sans (hỗ trợ dấu tiếng Việt)
+    //Nhúng font Noto Sans
     const fontName = 'NotoSansVN';
     if (window.__NOTOSANS_VN_BASE64__) {
       doc.addFileToVFS('NotoSans-VN-normal.ttf', window.__NOTOSANS_VN_BASE64__);
@@ -612,7 +703,7 @@
     doc.setFontSize(16);
     doc.text('Bảng điểm - GPA/CPA (HUST GPA/CPA Calculator)', 40, 40);
 
-    // Thêm Họ tên + MSSV
+    //Thêm Họ tên + MSSV
     const { name: studentName, studentId } = lastExportData.studentInfo || {};
     let offsetY = 0;
     doc.setFontSize(11);
@@ -638,13 +729,37 @@
     doc.setFontSize(12);
     doc.text('Bảng chi tiết môn (dùng để tính CPA)', 40, afterGpaY);
 
+    const distinctCoursesSorted = lastExportData.distinctCourses.slice().sort((a, b) => a.ID.localeCompare(b.ID));
     doc.autoTable({
       startY: afterGpaY + 10,
       head: [['Mã môn', 'Tên môn', 'TC', 'Điểm chữ', 'Điểm hệ 4']],
-      body: lastExportData.distinctCourses
-        .slice()
-        .sort((a, b) => a.ID.localeCompare(b.ID))
-        .map((it) => [it.ID, it.Name, String(it.Credit), it.scoreLetter, it.score4.toFixed(2)]),
+      body: distinctCoursesSorted.map((it) => [it.ID, it.Name, String(it.Credit), it.scoreLetter, it.score4.toFixed(2)]),
+      styles: { fontSize: 8, font: fontName },
+      headStyles: { fillColor: [192, 39, 45], font: fontName, fontStyle: 'bold' },
+      //Bôi đỏ dòng có điểm chữ F
+      didParseCell: (data) => {
+        if (data.section === 'body' && distinctCoursesSorted[data.row.index] && distinctCoursesSorted[data.row.index].scoreLetter === 'F') {
+          data.cell.styles.fillColor = [253, 234, 234];
+          data.cell.styles.textColor = [183, 28, 28];
+        }
+      },
+    });
+
+    //Cảnh cáo học tập
+    const afterDetail1Y = doc.lastAutoTable ? doc.lastAutoTable.finalY + 20 : 400;
+    doc.setFontSize(12);
+    doc.text('Cảnh cáo học tập', 40, afterDetail1Y);
+    doc.setFontSize(10);
+    doc.text(
+      `Tổng số tín chỉ đang nợ: ${lastExportData.canhCaoHienTai.Y} tín chỉ   |   Mức cảnh cáo hiện tại: Mức ${lastExportData.canhCaoHienTai.newLevel}`,
+      40,
+      afterDetail1Y + 16
+    );
+
+    doc.autoTable({
+      startY: afterDetail1Y + 26,
+      head: [['Học kỳ', 'Số tín chỉ nợ trong kỳ', 'Tổng số tín chỉ đang nợ', 'Mức cảnh cáo']],
+      body: lastExportData.historyCanhCao.map((it) => [it.semesterName, String(it.X), String(it.Y), `Mức ${it.newLevel}`]),
       styles: { fontSize: 8, font: fontName },
       headStyles: { fillColor: [192, 39, 45], font: fontName, fontStyle: 'bold' },
     });
@@ -693,15 +808,47 @@
     window.XLSX.utils.book_append_sheet(wb, wsGPA, 'GPA-CPA');
 
     //Sheet 2: Bảng điểm chi tiết
+    const distinctCoursesSortedXlsx = lastExportData.distinctCourses.slice().sort((a, b) => a.ID.localeCompare(b.ID));
     const detailSheetData = [
-      ['Mã môn', 'Tên môn', 'Số tín chỉ', 'Điểm chữ', 'Điểm hệ 4'],
-      ...lastExportData.distinctCourses
-        .slice()
-        .sort((a, b) => a.ID.localeCompare(b.ID))
-        .map((it) => [it.ID, it.Name, it.Credit, it.scoreLetter, Number(it.score4.toFixed(2))]),
+      ['Mã môn', 'Tên môn', 'Số tín chỉ', 'Điểm chữ', 'Điểm hệ 4', 'Trạng thái'],
+      ...distinctCoursesSortedXlsx.map((it) => [
+        it.ID,
+        it.Name,
+        it.Credit,
+        it.scoreLetter,
+        Number(it.score4.toFixed(2)),
+        it.scoreLetter === 'F' ? 'TRƯỢT' : '',
+      ]),
     ];
     const wsDetail = window.XLSX.utils.aoa_to_sheet(detailSheetData);
+
+    //Tô đỏ các dòng có điểm F
+    distinctCoursesSortedXlsx.forEach((it, idx) => {
+      if (it.scoreLetter !== 'F') return;
+      const rowIdx = idx + 2;
+      ['A', 'B', 'C', 'D', 'E', 'F'].forEach((col) => {
+        const cellRef = `${col}${rowIdx}`;
+        if (wsDetail[cellRef]) {
+          wsDetail[cellRef].s = {
+            fill: { patternType: 'solid', fgColor: { rgb: 'FFFDEAEA' } },
+            font: { color: { rgb: 'FFB71C1C' } },
+          };
+        }
+      });
+    });
+
     window.XLSX.utils.book_append_sheet(wb, wsDetail, 'Chi tiet mon');
+
+    //Sheet 3: Cảnh cáo học tập
+    const warningSheetData = [
+      ['Tổng số tín chỉ đang nợ', lastExportData.canhCaoHienTai.Y],
+      ['Mức cảnh cáo hiện tại', `Mức ${lastExportData.canhCaoHienTai.newLevel}`],
+      [],
+      ['Học kỳ', 'Số tín chỉ nợ trong kỳ', 'Tổng số tín chỉ đang nợ', 'Mức cảnh cáo'],
+      ...lastExportData.historyCanhCao.map((it) => [it.semesterName, it.X, it.Y, `Mức ${it.newLevel}`]),
+    ];
+    const wsWarning = window.XLSX.utils.aoa_to_sheet(warningSheetData);
+    window.XLSX.utils.book_append_sheet(wb, wsWarning, 'Canh cao hoc tap');
 
     window.XLSX.writeFile(wb, 'bang-diem-gpa-cpa.xlsx');
   }

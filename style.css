@@ -212,6 +212,15 @@
   color: #c0272d;
   margin-bottom: 8px;
 }
+.hgm-warning-summary {
+  border-left: 4px solid #c0272d;
+  background: #fafafa;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 10px;
+  line-height: 1.6;
+}
 .hgm-table {
   width: 100%;
   border-collapse: collapse;
@@ -225,6 +234,12 @@
 }
 .hgm-table th {
   background: #f7f7f7;
+}
+.hgm-tr-fail {
+  background: #fdeaea !important;
+}
+.hgm-tr-fail td {
+  color: #b71c1c !important;
 }
 
 .hgm-credit {

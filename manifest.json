@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "HUST GPA/CPA Calculator",
-  "version": "1.1.0",
-  "description": "Tự động đọc bảng điểm cá nhân trên QLĐT HUST và tính GPA/CPA theo trọng số quá trình - cuối kỳ tự nhập.",
+  "version": "1.2.0",
+  "description": "Tự động đọc bảng điểm cá nhân trên QLĐT HUST và tính GPA/CPA.",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
