@@ -15,6 +15,8 @@ Chrome/Edge extension tự động đọc bảng điểm cá nhân trên **QLĐT
 
 ## Cài đặt
 
+**Video hướng dẫn tải và cài đặt:** [https://youtu.be/9hdrniJtfb0?si=pnUCxQGrzpIc5ORI](https://youtu.be/9hdrniJtfb0?si=pnUCxQGrzpIc5ORI)
+
 1. Tải hoặc `git clone` repo này về máy.
 2. Vào `chrome://extensions` (Chrome/Edge).
 3. Bật **Developer mode** (Chế độ nhà phát triển).
@@ -30,24 +32,3 @@ Chrome/Edge extension tự động đọc bảng điểm cá nhân trên **QLĐT
 5. Xem kết quả, hoặc bấm **Xuất PDF** / **Xuất Excel** để tải bảng điểm về máy.
 
 ## Cấu trúc project
-
-```
-hust-gpa-extension/
-├── manifest.json
-├── content.js
-├── style.css
-├── icons/
-└── libs/
-    ├── xlsx.full.min.js
-    ├── jspdf.umd.min.js
-    ├── jspdf.plugin.autotable.min.js
-    └── notosans-vn-font.js
-```
-
-## Giấy phép
-
-Mã nguồn của project này phát hành theo giấy phép [MIT](LICENSE). Xem [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) để biết giấy phép của các thư viện bên thứ 3 được đóng gói kèm.
-
-## Tác giả
-
-**DucTapCodeDao**
