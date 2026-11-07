@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "HUST GPA/CPA Calculator",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "description": "Tự động đọc bảng điểm cá nhân trên QLĐT HUST và tính GPA/CPA.",
   "icons": {
     "16": "icons/icon16.png",
@@ -22,11 +22,34 @@
   "host_permissions": [
     "https://qldt.hust.edu.vn/*"
   ],
+  "web_accessible_resources": [
+    {
+      "resources": ["data/hust_courses_final.csv"],
+      "matches": ["https://qldt.hust.edu.vn/*"]
+    }
+  ],
   "content_scripts": [
     {
-      "matches": ["https://qldt.hust.edu.vn/students/learn/personal-transcript*"],
-      "js": ["libs/xlsx.full.min.js", "libs/jspdf.umd.min.js", "libs/jspdf.plugin.autotable.min.js", "libs/notosans-vn-font.js", "content.js"],
-      "css": ["style.css"],
+      "matches": [
+        "https://qldt.hust.edu.vn/students/learn/personal-transcript*"
+      ],
+      "js": [
+        "libs/xlsx.full.min.js",
+        "libs/jspdf.umd.min.js",
+        "libs/jspdf.plugin.autotable.min.js",
+        "libs/notosans-vn-font.js",
+        "content-src/state.js",
+        "content-src/scoring.js",
+        "content-src/scraper.js",
+        "content-src/lookup.js",
+        "content-src/mi-calculator.js",
+        "content-src/ui.js",
+        "content-src/compute-and-render.js",
+        "content-src/export-and-init.js"
+      ],
+      "css": [
+        "style.css"
+      ],
       "run_at": "document_idle"
     }
   ]
