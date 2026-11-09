@@ -4,6 +4,10 @@ Chrome/Edge extension tự động đọc bảng điểm cá nhân trên **QLĐT
 
 ![license](https://img.shields.io/badge/license-MIT-blue.svg)
 
+## Ủng hộ nhà phát triển cốc cà phê hoặc ly trà đá tại đây:
+ 
+<p align="center"><img src="images/donate-qr.jpg" alt="Mã QR donate" width="300"></p>
+
 ## Tính năng
 
 - Tự động đọc bảng điểm ngay trên trang `qldt.hust.edu.vn`.
@@ -18,7 +22,7 @@ Chrome/Edge extension tự động đọc bảng điểm cá nhân trên **QLĐT
 ## Cài đặt
 
 **Video hướng dẫn tải và cài đặt:** [https://youtu.be/9hdrniJtfb0?si=pnUCxQGrzpIc5ORI](https://youtu.be/9hdrniJtfb0?si=pnUCxQGrzpIc5ORI)
-
+**Video giới thiệu phiên bản v2.0.0:** [https://youtu.be/jbpxFdIwyWQ] (https://youtu.be/jbpxFdIwyWQ)
 1. Tải hoặc `git clone` repo này về máy.
 2. Vào `chrome://extensions` (Chrome/Edge).
 3. Bật **Developer mode** (Chế độ nhà phát triển).
