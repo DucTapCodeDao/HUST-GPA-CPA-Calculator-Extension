@@ -22,7 +22,8 @@ Chrome/Edge extension tự động đọc bảng điểm cá nhân trên **QLĐT
 ## Cài đặt
 
 **Video hướng dẫn tải và cài đặt:** [https://youtu.be/9hdrniJtfb0?si=pnUCxQGrzpIc5ORI](https://youtu.be/9hdrniJtfb0?si=pnUCxQGrzpIc5ORI)
-**Video giới thiệu phiên bản v2.0.0:** [https://youtu.be/jbpxFdIwyWQ] (https://youtu.be/jbpxFdIwyWQ)
+
+**Video giới thiệu phiên bản v2.0.0:** [https://youtu.be/jbpxFdIwyWQ](https://youtu.be/jbpxFdIwyWQ)
 1. Tải hoặc `git clone` repo này về máy.
 2. Vào `chrome://extensions` (Chrome/Edge).
 3. Bật **Developer mode** (Chế độ nhà phát triển).
